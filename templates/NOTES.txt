@@ -1,5 +1,5 @@
-Hello my friend!
+This is a trial version!
 
 {{ .Chart.Name }} chart with the name: {{ .Release.Name }} has been deployed!
 
-For any questions please contact us: email@domain.com
+For any questions please contact us: support@buildben.io
