@@ -1,0 +1,103 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "chart.fullname" . }}
+  labels:
+    {{- include "chart.labels" . | nindent 4 }}
+spec:
+  serviceName: {{ include "chart.fullname" . }}
+  replicas: {{ .Values.backend.replicaCount }}
+  updateStrategy:
+    type: RollingUpdate
+  selector:
+    matchLabels:
+      {{- include "chart.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+    {{- with .Values.backend.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+      labels:
+        {{- include "chart.selectorLabels" . | nindent 8 }}
+        date: "{{ now | unixEpoch }}"
+    spec:
+            #{{- with .Values.imagePullSecrets }}
+            #imagePullSecrets:
+            #{{- toYaml . | nindent 8 }}
+            #{{- end }}
+      serviceAccountName: {{ include "chart.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      initContainers:
+        - name: waiting-postgres
+          image: busybox
+          command: ['sh', '-c', "until $(nc -z bb-pg 5432); do echo Waiting for postgres; sleep 2; done"]
+      containers:
+        - name: {{ .Chart.Name }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.backend.image.repository }}:{{ .Values.backend.image.tag }}"
+          imagePullPolicy: {{ .Values.backend.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.service.port }}
+          env:
+            {{- range .Values.backend.env }}
+            - name: {{ .name }}
+              value: {{ .value }}
+            {{- end }}
+          volumeMounts:
+            - mountPath: /opt
+              name: bb-back-data
+          resources:
+            {{- toYaml .Values.backend.resources | nindent 12 }}
+          livenessProbe:
+            httpGet:
+              path: /ping
+              port: {{ .Values.service.port }}
+            initialDelaySeconds: 10
+            failureThreshold: 3
+            periodSeconds: 5
+          readinessProbe:
+            httpGet:
+              path: /ping
+              port: {{ .Values.service.port }}
+            initialDelaySeconds: 10
+            failureThreshold: 3
+            periodSeconds: 5
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- if .Values.backend.persistence.enabled }}
+  volumeClaimTemplates:
+    - metadata:
+        name: bb-back-data
+      spec:
+        accessModes:
+  {{- range .Values.backend.persistence.accessModes }}
+          - {{ . | quote }}
+  {{- end }}
+        resources:
+          requests:
+            storage: {{ .Values.backend.persistence.size | quote }}
+  {{- if .Values.backend.persistence.storageClassName }}
+    {{- if (eq "-" .Values.backend.persistence.storageClassName) }}
+        storageClassName: ""
+    {{- else }}
+        storageClassName: "{{ .Values.backend.persistence.storageClassName }}"
+    {{- end }}
+  {{- end }}
+{{- else }}
+        - name: bb-back-data
+          emptyDir: {}
+{{- end }}

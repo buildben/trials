@@ -1,0 +1,130 @@
+###
+# Common configuration
+###
+
+nameOverride: ""
+fullnameOverride: ""
+
+service:
+  type: ClusterIP
+  port: 8080
+
+route:
+  enabled: false
+  hostname: ""
+
+securityContext:
+   capabilities:
+     drop:
+       - KILL
+       - MKNOD
+       - SETGID
+       - SETUID
+       - FOWNER
+
+serviceAccount:
+  create: true
+  annotations: {}
+  name: buildben
+  createRole: true
+
+
+
+###
+# Backend configuration
+###
+
+backend:
+  replicaCount: 1
+
+  image:
+    repository: "buildbenio/backend_trial" 
+    pullPolicy: Always
+    tag: "latest"
+  resources:
+    limits:
+      cpu: 1000m
+      memory: 1024Mi
+    requests:
+      cpu: 500m
+      memory: 256Mi
+
+  podAnnotations: {}
+  env:
+    - name: "BUILDBEN_S3_REGION"
+      value: ""
+    - name: "BUILDBEN_S3_BUCKET_NAME"
+      value: ""
+    - name: "BUILDBEN_S3_ACCESS_KEY_ID"
+      value: ""
+    - name: "BUILDBEN_S3_SECRET_ACCESS_KEY"
+      value: ""
+    - name: "BUILDBEN_MINIO_URL"
+      value: ""
+
+  persistence:
+    enabled: true
+    # Default storageclass will be used
+    #
+    storageClassName: "gp2"
+    accessModes:
+      - ReadWriteOnce
+    size: 1Gi
+
+
+###
+# Workers configuration
+###
+
+worker_agents:
+  cache_persistence:
+    enabled: true
+    # Default storageclass will be used
+    #
+    storageClassName: ""
+    accessModes:
+      - ReadWriteOnce
+    size: 10Gi
+  data_persistence:
+    enabled: true
+    # Default storageclass will be used
+    #
+    storageClassName: ""
+    accessModes:
+      - ReadWriteOnce
+    size: 10Gi
+
+
+###
+# Postgresql configuration
+###
+
+postgresql:
+  image:
+    repository: "docker.io/centos/postgresql-12-centos8" 
+    pullPolicy: Always
+    tag: "1"
+
+  env:
+    POSTGRESQL_USER: "buildben"
+    POSTGRESQL_DATABASE: "buildben"
+    POSTGRESQL_PASSWORD: "buildben"
+
+  resources:
+    limits:
+      cpu: 2000m
+      memory: 4Gi
+    requests:
+      cpu: 1500m
+      memory: 4Gi
+
+  podAnnotations: {}
+
+  persistence:
+    enabled: true
+    # Default storageclass will be used
+    #
+    storageClassName: ""
+    accessModes:
+      - ReadWriteOnce
+    size: 10Gi

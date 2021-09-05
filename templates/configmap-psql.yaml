@@ -1,0 +1,46 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: psql-init
+  labels:
+    app: bb-pg
+data:
+  set_role.sh: |
+    psql -c "ALTER USER buildben WITH SUPERUSER;"
+    psql -f /etc/postgresql/postgresql.sql
+  buildben_pg_custom_config.sql: |
+    ALTER SYSTEM SET shared_buffers TO '1024MB';
+    ALTER SYSTEM SET work_mem TO '16MB';
+    ALTER SYSTEM SET maintenance_work_mem TO '512MB';
+    ALTER SYSTEM SET autovacuum_work_mem TO '512MB';
+    ALTER SYSTEM SET vacuum_cost_delay TO '10';
+    ALTER SYSTEM SET vacuum_cost_limit TO '8000';
+    ALTER SYSTEM SET bgwriter_delay TO '50ms';
+    ALTER SYSTEM SET bgwriter_lru_maxpages TO '800';
+    ALTER SYSTEM SET bgwriter_lru_multiplier TO '7.0';
+    ALTER SYSTEM SET old_snapshot_threshold TO '1d';
+    ALTER SYSTEM SET checkpoint_timeout TO '900s';
+    ALTER SYSTEM SET max_wal_size TO '4GB';
+    ALTER SYSTEM SET min_wal_size TO '1GB';
+    ALTER SYSTEM SET checkpoint_completion_target TO '0.85';
+    ALTER SYSTEM SET effective_cache_size TO '2GB';
+    ALTER SYSTEM SET default_statistics_target TO '500';
+    ALTER SYSTEM SET logging_collector TO 'on';
+    ALTER SYSTEM SET log_filename TO 'postgresql-%a.log';
+    ALTER SYSTEM SET log_truncate_on_rotation TO 'on';
+    ALTER SYSTEM SET log_rotation_age TO '1d';
+    ALTER SYSTEM SET log_rotation_size TO '0';
+    ALTER SYSTEM SET log_lock_waits TO 'on';
+    ALTER SYSTEM SET autovacuum_naptime TO '15s';
+    ALTER SYSTEM SET autovacuum_vacuum_threshold TO '1000';
+    ALTER SYSTEM SET autovacuum_analyze_threshold TO '500';
+    ALTER SYSTEM SET autovacuum_vacuum_scale_factor TO '0.02';
+    ALTER SYSTEM SET autovacuum_analyze_scale_factor TO '0.01';
+    ALTER SYSTEM SET autovacuum_freeze_max_age TO '500000000';
+    ALTER SYSTEM SET autovacuum_vacuum_cost_delay TO '2ms';
+    ALTER SYSTEM SET autovacuum_vacuum_cost_limit TO '4000';
+    ALTER SYSTEM SET idle_in_transaction_session_timeout TO '6h';
+    ALTER SYSTEM SET vacuum_freeze_min_age TO '100000000';
+    ALTER SYSTEM SET deadlock_timeout TO '100ms';
+    ALTER SYSTEM SET max_locks_per_transaction TO '128';
+    ALTER SYSTEM SET random_page_cost TO '1.1';

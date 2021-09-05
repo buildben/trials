@@ -1,0 +1,91 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: bb-pg
+spec:
+  serviceName: bb-pg
+  replicas: 1
+  selector:
+    matchLabels:
+      app: bb-pg
+  template:
+    metadata:
+      labels:
+        app: bb-pg
+    spec:
+      containers:
+      - name: postgres
+        image: "{{ .Values.postgresql.image.repository }}:{{ .Values.postgresql.image.tag }}"
+        imagePullPolicy: {{ .Values.postgresql.image.pullPolicy }}
+        ports:
+        - containerPort: 5432
+          name: postgres
+        env:
+            {{- range $key, $value := .Values.postgresql.env }}
+            - name: {{ $key }}
+              value: {{ $value | quote }}
+            {{- end }}
+            - name: POD_IP
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: status.podIP
+        volumeMounts:
+        - name: bb-pg
+          mountPath: /var/lib/postgresql/data
+          subPath: postgres
+        - name: psql-init
+          mountPath: /usr/share/container-scripts/postgresql/start/set_role.sh
+          subPath: set_role.sh
+        - name: psql-init
+          mountPath: /etc/postgresql/postgresql.sql
+          subPath: buildben_pg_custom_config.sql
+        livenessProbe:
+            exec:
+              command:
+                - sh
+                - -c
+                - exec pg_isready --host $POD_IP
+            failureThreshold: 6
+            initialDelaySeconds: 60
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 5
+        readinessProbe:
+            exec:
+              command:
+                - sh
+                - -c
+                - exec pg_isready --host $POD_IP
+            failureThreshold: 3
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            successThreshold: 1
+            timeoutSeconds: 3
+      volumes:
+      - name: psql-init
+        configMap:
+          name: psql-init
+{{- if .Values.postgresql.persistence.enabled }}
+  volumeClaimTemplates:
+    - metadata:
+        name: bb-pg
+      spec:
+        accessModes:
+  {{- range .Values.postgresql.persistence.accessModes }}
+          - {{ . | quote }}
+  {{- end }}
+        resources:
+          requests:
+            storage: {{ .Values.postgresql.persistence.size | quote }}
+  {{- if .Values.postgresql.persistence.storageClassName }}
+    {{- if (eq "-" .Values.postgresql.persistence.storageClassName) }}
+        storageClassName: ""
+    {{- else }}
+        storageClassName: "{{ .Values.postgresql.persistence.storageClassName }}"
+    {{- end }}
+  {{- end }}
+{{- else }}
+        - name: bb-pg
+          emptyDir: {}
+{{- end }}

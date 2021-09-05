@@ -1,0 +1,17 @@
+{{- if .Values.route.enabled }}
+apiVersion: v1
+kind: Route
+metadata:
+  name: {{ .Chart.Name }}-backend
+spec:
+  host: {{ .Values.route.hostname }}
+  port:
+    targetPort: {{ .Chart.Name }}-backend
+  tls:
+    termination: edge
+  to:
+    kind: Service
+    name: {{ .Chart.Name }}-backend
+    weight: 100
+  wildcardPolicy: None
+{{- end }}

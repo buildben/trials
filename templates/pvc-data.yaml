@@ -1,0 +1,21 @@
+{{- if .Values.worker_agents.data_persistence.enabled }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: bb-data
+spec:
+  {{- if .Values.worker_agents.data_persistence.storageClassName }}
+    {{- if (eq "-" .Values.worker_agents.data_persistence.storageClassName) }}
+  storageClassName: ""
+    {{- else }}
+  storageClassName: "{{ .Values.worker_agents.data_persistence.storageClassName }}"
+    {{- end }}
+  {{- end }}
+  accessModes:
+  {{- range .Values.worker_agents.data_persistence.accessModes }}
+     - {{ . | quote }}
+  {{- end }}
+  resources:
+    requests:
+      storage: {{ .Values.worker_agents.data_persistence.size | quote }}
+{{- end }}

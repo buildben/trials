@@ -1,0 +1,5 @@
+Hello my friend!
+
+{{ .Chart.Name }} chart with the name: {{ .Release.Name }} has been deployed!
+
+For any questions please contact us: email@domain.com
