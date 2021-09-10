@@ -50,15 +50,6 @@ backend:
       memory: 256Mi
 
   podAnnotations: {}
-  env:
-    - name: "BUILDBEN_S3_REGION"
-      value: ""
-    - name: "BUILDBEN_S3_ACCESS_KEY_ID"
-      value: ""
-    - name: "BUILDBEN_S3_SECRET_ACCESS_KEY"
-      value: ""
-    - name: "BUILDBEN_MINIO_URL"
-      value: ""
 
   persistence:
     enabled: true
@@ -103,3 +94,14 @@ postgresql:
     accessModes:
       - ReadWriteOnce
     size: 10Gi
+
+###
+# Minio configuration
+###
+
+minio:
+  mode: distributed
+  secretKey:
+    password: buildben
+  securityContext:
+    enabled: false
